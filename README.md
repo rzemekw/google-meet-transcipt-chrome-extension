@@ -1,59 +1,99 @@
 # Meet Transcript to File
 
-Chrome extension that turns on Google Meet captions as soon as you are in a call and appends
-every caption line to a text file on disk:
+Saves what people say on your Google Meet calls to a text file on your computer.
+
+Install it once and forget it. Every time you join a call, the extension turns on Meet's
+captions by itself, reads them as they appear and writes them line by line, with the time and
+the speaker's name, to a file in `~/meet-transcripts/`:
 
 ```
-# Daily
-# https://meet.google.com/abc-defg-hij
-# started 2026-09-07T09:30:12+02:00
-
 [09:30:12] Jan Kowalski: Wczoraj skończyłem etap piąty, dzisiaj testy end to end.
 [09:30:41] Anna Nowak: Ja robiłam review i dzisiaj poprawki po komentarzach.
 ```
 
-One file per meeting per day in `~/meet-transcripts/`, named `YYYY-MM-DD_HHMM_<meeting-code>.txt`.
-Rejoining the same meeting on the same day appends to the same file.
+One file per meeting per day. Nothing is recorded, no audio or video is stored and nothing
+leaves your computer; the extension only copies the caption text Meet already shows on screen.
+Captions are free in every Google Workspace edition, so this does not need the paid Meet
+transcript feature.
 
-It uses the captions Meet already shows (free in every Workspace edition), not the paid
-transcript feature. Nothing is recorded; only the caption text is written.
+## Install
 
-## Install (once)
+You need Linux, Google Chrome (or Brave, Chromium, Edge, Vivaldi) and Python 3.
 
-```
-git clone https://github.com/rzemekw/google-meet-transcipt-chrome-extension.git
-cd google-meet-transcipt-chrome-extension
-./install.sh
-```
+1. Download the project and register the helper that writes the files:
 
-Then in Chrome: `chrome://extensions` → enable *Developer mode* → *Load unpacked* → pick the
-`extension/` directory. The extension id must match the one `install.sh` prints (the key in
-`manifest.json` pins it), otherwise Chrome will refuse to start the native host.
+   ```
+   git clone https://github.com/rzemekw/google-meet-transcipt-chrome-extension.git
+   cd google-meet-transcipt-chrome-extension
+   ./install.sh
+   ```
 
-`install.sh` registers the native messaging host for Chrome, Chromium, Brave, Edge and Vivaldi
-profiles found under `~/.config`. Run it again if you move the repository.
+2. Load the extension in your browser:
+   - open `chrome://extensions` (in Brave: `brave://extensions`),
+   - switch on **Developer mode** in the top right corner,
+   - click **Load unpacked** and choose the `extension` folder inside the project.
 
-## How it works
+3. Join any Meet call. Captions switch on by themselves and the file appears in
+   `~/meet-transcripts/` as soon as somebody says something.
 
-- `extension/content.js` runs on `meet.google.com`. Every second it clicks the captions button if
-  captions are off, and watches the captions region with a `MutationObserver`. Meet keeps editing
-  a caption block while its person speaks (several blocks at once when people talk over each
-  other), so every block is tracked on its own and written out when it disappears or after
+That is all. Do not move or delete the project folder afterwards; the browser loads the extension
+from it. If you do move it, run `./install.sh` again and reload the extension.
+
+### Is it working?
+
+Open a call and check that the captions button in the toolbar turned itself on. If it did not, or
+the file stays empty, open the browser console on the call tab (F12 → Console) and look for lines
+starting with `[meet-transcript]`. Send them along with a bug report.
+
+---
+
+## For developers
+
+### Layout
+
+- `extension/manifest.json` — Manifest V3. The `key` field pins the extension id so that the
+  native host's `allowed_origins` is the same on every machine.
+- `extension/content.js` — runs on `meet.google.com`. Every second it clicks the captions
+  button if captions are off, and watches the captions region with a `MutationObserver`. Meet keeps
+  editing a caption block while its person speaks (several blocks at once when people talk over
+  each other), so every block is tracked on its own and written out when it disappears or after
   8 seconds without changes. A block that grows afterwards only gets its new words written, with
   the last few already written words repeated if Meet corrected them.
-- `extension/background.js` forwards each line to the native host, strictly in order.
-- `host/meet_transcript_host.py` is started by Chrome per line, resolves the file from the date
-  and meeting code, appends, exits. Requires Python 3.
+- `extension/background.js` — service worker; forwards each line to the native host with
+  `chrome.runtime.sendNativeMessage`, strictly in order.
+- `host/meet_transcript_host.py` — native messaging host. Chrome starts one process per line; it
+  resolves the file from the date and meeting code (`YYYY-MM-DD_HHMM_<code>.txt`, rejoining the
+  same meeting on the same day appends), writes the line and exits. Stateless on purpose.
+- `install.sh` — derives the extension id from the pinned key and writes the host manifest into
+  `NativeMessagingHosts/` of every Chromium-based browser profile found under `~/.config`.
 
-## When it stops working
+### Line format
 
-Meet changes its DOM a few times a year. The things that can break are listed at the top of
+```
+# <meeting title or code>
+# https://meet.google.com/<code>
+# started <ISO time>
+
+[HH:MM:SS] <speaker>: <text>
+```
+
+The time is when the caption block first appeared. Your own captions carry the label Meet uses for
+you ("Ty" / "You").
+
+### When it stops working
+
+Meet changes its DOM a few times a year. The assumptions that can break are listed at the top of
 `extension/content.js`: the captions icon name, the captions region selector and the
-speaker/text block shape. Symptoms: captions no longer turn on by themselves, or files stay
-empty. Open the call tab's console and look for `[meet-transcript]` lines.
+speaker/text block shape. Symptoms: captions no longer turn on by themselves, or files stay empty.
+The `[meet-transcript]` console lines say which stage was reached.
 
-## Tests
+After editing `content.js`, reload the extension on `chrome://extensions` and refresh the call tab;
+an old copy left on a tab shuts itself down and logs `extension reloaded, refresh this tab`.
+
+### Tests
 
 ```
 python3 -m unittest host/test_host.py
 ```
+
+The content script has no automated tests; it is verified against a live call.
