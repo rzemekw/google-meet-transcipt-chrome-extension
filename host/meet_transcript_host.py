@@ -13,6 +13,7 @@ Reply:
     {"ok": false, "error": "..."}
 
 Native messaging framing: 4-byte native-endian length prefix + UTF-8 JSON, both directions.
+On Windows Chrome starts meet_transcript_host.bat, which runs this script with python.
 """
 
 import json
@@ -21,6 +22,12 @@ import struct
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+if sys.platform == "win32":  # stdio defaults to text mode and would translate the framing bytes
+    import msvcrt
+
+    msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+    msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 
 TRANSCRIPTS_DIR = Path(os.environ.get("MEET_TRANSCRIPTS_DIR", Path.home() / "meet-transcripts"))
 

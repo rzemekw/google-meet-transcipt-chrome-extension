@@ -18,9 +18,13 @@ transcript feature.
 
 ## Install
 
-You need Linux, Google Chrome (or Brave, Chromium, Edge, Vivaldi) and Python 3.
+You need Google Chrome (or Brave, Chromium, Edge, Vivaldi) and Python 3. On Windows install
+Python from <https://www.python.org/downloads/> and tick *Add python.exe to PATH*; on macOS and
+most Linux distributions it is already there.
 
-1. Download the project and register the helper that writes the files:
+1. Download the project and register the helper that writes the files.
+
+   Linux and macOS:
 
    ```
    git clone https://github.com/rzemekw/google-meet-transcipt-chrome-extension.git
@@ -28,16 +32,27 @@ You need Linux, Google Chrome (or Brave, Chromium, Edge, Vivaldi) and Python 3.
    ./install.sh
    ```
 
+   Windows (PowerShell):
+
+   ```
+   git clone https://github.com/rzemekw/google-meet-transcipt-chrome-extension.git
+   cd google-meet-transcipt-chrome-extension
+   powershell -ExecutionPolicy Bypass -File install.ps1
+   ```
+
+   No administrator rights are needed on any system.
+
 2. Load the extension in your browser:
-   - open `chrome://extensions` (in Brave: `brave://extensions`),
+   - open `chrome://extensions` (in Brave: `brave://extensions`, in Edge: `edge://extensions`),
    - switch on **Developer mode** in the top right corner,
    - click **Load unpacked** and choose the `extension` folder inside the project.
 
 3. Join any Meet call. Captions switch on by themselves and the file appears in
-   `~/meet-transcripts/` as soon as somebody says something.
+   `meet-transcripts` in your home folder (`~/meet-transcripts/` on Linux and macOS,
+   `C:\Users\<you>\meet-transcripts\` on Windows) as soon as somebody says something.
 
 That is all. Do not move or delete the project folder afterwards; the browser loads the extension
-from it. If you do move it, run `./install.sh` again and reload the extension.
+from it. If you do move it, run the install script again and reload the extension.
 
 ### Is it working?
 
@@ -64,8 +79,12 @@ starting with `[meet-transcript]`. Send them along with a bug report.
 - `host/meet_transcript_host.py` — native messaging host. Chrome starts one process per line; it
   resolves the file from the date and meeting code (`YYYY-MM-DD_HHMM_<code>.txt`, rejoining the
   same meeting on the same day appends), writes the line and exits. Stateless on purpose.
-- `install.sh` — derives the extension id from the pinned key and writes the host manifest into
-  `NativeMessagingHosts/` of every Chromium-based browser profile found under `~/.config`.
+- `install.sh` (Linux, macOS) and `install.ps1` (Windows) — derive the extension id from the
+  pinned key and register the host manifest: as a file in every browser's `NativeMessagingHosts/`
+  directory under `~/.config` or `~/Library/Application Support`, or as per-user registry keys
+  under `HKCU:\Software\<browser>\NativeMessagingHosts` pointing at a manifest written next to
+  the host. On Windows the manifest points at `host/meet_transcript_host.bat`, which runs the
+  script with `py -3` or `python`; the script switches stdio to binary mode there.
 
 ### Line format
 

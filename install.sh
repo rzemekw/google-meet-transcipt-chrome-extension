@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Registers the native messaging host for every Chromium-based browser found in ~/.config.
-# Run once after cloning; run again if the repository is moved.
+# Registers the native messaging host for every Chromium-based browser profile found on this
+# machine (Linux: ~/.config, macOS: ~/Library/Application Support). Run once after cloning; run
+# again if the repository is moved. Windows uses install.ps1.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,7 +27,12 @@ for config_dir in \
   "$HOME/.config/chromium" \
   "$HOME/.config/BraveSoftware/Brave-Browser" \
   "$HOME/.config/microsoft-edge" \
-  "$HOME/.config/vivaldi"; do
+  "$HOME/.config/vivaldi" \
+  "$HOME/Library/Application Support/Google/Chrome" \
+  "$HOME/Library/Application Support/Chromium" \
+  "$HOME/Library/Application Support/BraveSoftware/Brave-Browser" \
+  "$HOME/Library/Application Support/Microsoft Edge" \
+  "$HOME/Library/Application Support/Vivaldi"; do
   [ -d "$config_dir" ] || continue
   mkdir -p "$config_dir/NativeMessagingHosts"
   cat > "$config_dir/NativeMessagingHosts/$HOST_NAME.json" <<EOF
@@ -43,7 +49,7 @@ EOF
 done
 
 if [ "$registered" -eq 0 ]; then
-  echo "no Chromium-based browser profile found under ~/.config" >&2
+  echo "no Chromium-based browser profile found (looked under ~/.config and ~/Library/Application Support)" >&2
   exit 1
 fi
 
