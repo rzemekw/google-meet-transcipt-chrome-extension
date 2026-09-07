@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Meet Transcript to File",
+  "version": "0.1.0",
+  "description": "Turns on Google Meet captions and appends every caption line (time, speaker, text) to a text file on disk.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApmA09YC4b7lpkI+xJK18kOlCIGIkzzGxdt/Bm0xWM9iLxSoQkJE4YyG1a2j+jE9rhUeUJKA3l83KqqUt25D0rKqvuQ7KTkji+B2jkmtE/8NzgGwY+/gcW1ycAGWWFYznOvXMASDz2w4/Y4OIsdk7jX0yvvO7OhP/9kZ0AyLMXc3cEpeZvHqKLLsqVqBhEkF1Ink7VIbrASWW8Ekd4qPsskO7DaKZlq4JZPCqdwutNMZBqBDPSA3ItCzh6abYTeI00yRgVrcdoWsm0ZQ9x7/2TbnpGHFkzm294s/+EuM3FR4kZKFSruFYBCt5ehuW2VL5ss0PTKml6yHhmr4Fxk5oMwIDAQAB",
+  "permissions": ["nativeMessaging"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
