@@ -161,14 +161,13 @@
     });
   }
 
-  function inDocumentOrder(elements) {
-    return [...elements].sort((a, b) =>
-      a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
-    );
+  // Oldest block first. Document order is undefined for blocks already removed from the DOM.
+  function byStart(elements) {
+    return [...elements].sort((a, b) => pendings.get(a).startedAt.localeCompare(pendings.get(b).startedAt));
   }
 
   function flushAll() {
-    for (const el of inDocumentOrder(pendings.keys())) flush(el);
+    for (const el of byStart(pendings.keys())) flush(el);
   }
 
   function startPending(el, current) {
@@ -201,7 +200,7 @@
     const finished = [...pendings].filter(
       ([el, p]) => !document.contains(el) || !isBlock(el) || now - p.changedAt > IDLE_FLUSH_MS
     );
-    for (const el of inDocumentOrder(finished.map(([el]) => el))) flush(el);
+    for (const el of byStart(finished.map(([el]) => el))) flush(el);
     for (const el of writtenTexts.keys()) {
       if (!document.contains(el)) writtenTexts.delete(el);
     }
